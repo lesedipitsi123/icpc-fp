@@ -85,8 +85,7 @@ let commaSprinkler (input : string) =
                     | _ -> apply sentanceList (","::a::newlist) (indx + 1)
             List.rev (apply (sentanceList) ([]) (0))
            
-    let output = 
-        let workingWords = builder (wordsList) [] ("") 0
+    let output wordslist = 
         let rec apply (wordlist: string list) (workingWords: Word List) (completedWords: Word List) =
             match workingWords with
             | [] -> wordlist
@@ -95,10 +94,9 @@ let commaSprinkler (input : string) =
                 | false, x -> apply x (List.distinct (List.append workingWords (a::completedWords))) (a::completedWords)
                 | true, _ -> apply wordlist b completedWords
         
-        apply wordsList workingWords
+        apply wordslist (builder (wordsList) [] ("") 0) []
     
-    printf "Output is %A\n" (output)
-
+    printf "Output is %A\n" (output wordsList)
     output
     // printf "Search words are %A\n" searchWords
     
