@@ -1,5 +1,6 @@
 ﻿module ICPC
 open System
+open System.Net.Sockets
 
 // Data structure for words
 type Position =
@@ -13,10 +14,10 @@ type Word = {
 
 let commaSprinkler (input : string) =
     let len = String.length input // get length of word
-// Split up sentence into a list w/ space as delimeter
+    // Split up sentence into a list w/ space as delimeter
     let rec split (sentence : string) (word: string) (newList : string list) idx =
         match idx < (len) with 
-        | false -> newList
+        | false -> "."::newList
         | true ->
             match sentence.[idx] with
             | ' ' -> split sentence ("") (word::newList) (idx + 1) // Ignore w/space & concat word to list
@@ -92,14 +93,32 @@ let commaSprinkler (input : string) =
             | a::b -> 
                 match (List.exists (fun x -> x=a) completedWords), (sprinkler (wordlist) a) with
                 | false, x -> apply x (List.distinct (List.append (builder (x) [] ("") 0) (a::completedWords))) (a::completedWords)
-                | true, _ -> apply wordlist b completedWords
-        
+                | true, _ -> apply wordlist b completedWords      
         apply wordslist (builder (wordsList) [] ("") 0) []
     
-    printf "Output is %A\n" (output wordsList)
-    output
-    // printf "Search words are %A\n" searchWords
+    let outputFormat (output:string list) =
+        let rec apply (list:string list) (outString:string) (indx:int) =
+            match indx < list.Length with
+            | false -> outString.TrimEnd ()
+            | true -> 
+                match list.[indx] with
+                | "," -> apply list (outString + ", ") (indx + 1)
+                | "." -> apply list (outString + ". ") (indx + 1)
+                | x ->
+                    match indx <> list.Length - 1 with
+                    | true -> 
+                        match list.[indx + 1] with
+                        | "," | "." -> apply list (outString + x) (indx + 1)
+                        | _ -> apply list (outString + x + " ") (indx + 1)
+                    | false -> apply list (outString + x) (indx + 1)
+        apply output "" 0
     
+    printf "Output is %A\n" (output wordsList)   
+    printf "Output is %A\n" (Some (outputFormat (output wordsList)))
+    Some (outputFormat (output wordsList))
+    // printf "Search words are %A\n" searchWords
+commaSprinkler "please, sit spot. sit spot, sit. spot, here now here";;
+
 let rivers input =
     failwith "Not implemented"
 
