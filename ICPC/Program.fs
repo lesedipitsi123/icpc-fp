@@ -32,11 +32,11 @@ let commaSprinkler (input : string) =
         | [] -> searchWords
         | currWord::tail -> 
             match currWord, prevWord with
-            | ",", prev -> builder (tail) ({position=Behind; word=prev}::searchWords) currWord (idx+1)
-            | curr, "," -> builder (tail) ({position=Infront; word=curr}::searchWords) curr (idx+1)
+            | ",", prev -> builder (tail) ({position=Infront; word=prev}::searchWords) currWord (idx+1)
+            | curr, "," -> builder (tail) ({position=Behind; word=curr}::searchWords) curr (idx+1)
             | a, _ -> builder (tail) searchWords a (idx+1) 
     let searchWords = builder (wordsList) [] ("") 0
-
+    printf "builder returns %A\n" searchWords
     //finally place commas in appropriate positions.
     (*let rec addComma (sentence: string list) (searchWords: Word list) (prevWord: string) acc =
         match sentence with
@@ -84,14 +84,14 @@ let commaSprinkler (input : string) =
                     | "," -> apply sentanceList (a::newlist) (indx + 1)
                     | _ -> apply sentanceList (","::a::newlist) (indx + 1)
             List.rev (apply (sentanceList) ([]) (0))
-           
+
     let output wordslist = 
         let rec apply (wordlist: string list) (workingWords: Word List) (completedWords: Word List) =
             match workingWords with
             | [] -> wordlist
             | a::b -> 
                 match (List.exists (fun x -> x=a) completedWords), (sprinkler (wordlist) a) with
-                | false, x -> apply x (List.distinct (List.append workingWords (a::completedWords))) (a::completedWords)
+                | false, x -> apply x (List.distinct (List.append (builder (x) [] ("") 0) (a::completedWords))) (a::completedWords)
                 | true, _ -> apply wordlist b completedWords
         
         apply wordslist (builder (wordsList) [] ("") 0) []
