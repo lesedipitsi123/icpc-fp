@@ -1,66 +1,64 @@
 ﻿module ICPC
 open System
 
-type Pos =
+// Data structure for words
+type Position =
 | Behind
 | Infront
 
-let commaSprinkler input =
-    //splitting the input into a list
-    let inputList (input:string) =
-        let rec apply (input:string) (newlist:string list) word =
-            match input.[0],input.Length > 1 with
-            | _, false -> word::newlist
-            | ' ', true -> apply input.[1..] (word::newlist) ""
-            | '.', true -> apply input.[2..] ("."::word::newlist) ""
-            | ',', true -> apply input.[2..] (","::word::newlist) ""
-            | a, true -> apply input.[1..] (newlist) (word + string a)
-        List.rev (apply (input) ([]) (""))
-    
-    let sprinkler (sentanceList:string list) (word:string) pos =
-        match pos with
-        | Behind -> 
-            let rec apply (sentanceList:string list) (newlist:string list) indx =
-                match indx, sentanceList.[indx], indx <> sentanceList.Length - 1, sentanceList.[indx] = word with
-                | _, a, false, _ -> a::newlist
-                | 0, a, true, _ -> apply sentanceList (a::newlist) (indx + 1)
-                | _, a, true, false -> apply sentanceList (a::newlist) (indx + 1)
-                | _, a, true, true ->
-                    match sentanceList.[indx - 1] with
-                    | "." -> apply sentanceList (a::newlist) (indx + 1)
-                    | "," -> apply sentanceList (a::newlist) (indx + 1)
-                    | _ -> apply sentanceList (a::","::newlist) (indx + 1)
-            List.rev (apply (sentanceList) ([]) (0))
-        | Infront -> 
-            let rec apply (sentanceList:string list) (newlist:string list) indx =
-                match indx, sentanceList.[indx], indx <> sentanceList.Length - 1, sentanceList.[indx] = word with
-                | _, a, false, _ -> a::newlist
-                | 0, a, true, _ -> apply sentanceList (a::newlist) (indx + 1)
-                | _, a, true, false -> apply sentanceList (a::newlist) (indx + 1)
-                | _, a, true, true ->
-                    match sentanceList.[indx + 1] with
-                    | "." -> apply sentanceList (a::newlist) (indx + 1)
-                    | "," -> apply sentanceList (a::newlist) (indx + 1)
-                    | _ -> apply sentanceList (","::a::newlist) (indx + 1)
-            List.rev (apply (sentanceList) ([]) (0))
-    
-    let sentance = inputList input
-    let areEqual x y = x = y
+type Word = {
+ position : Position
+ word : string
+}
 
-    let rec outputList (sentance:string list) (newlist:string list) (foundWords:string list) indx =
-        match sentance.[indx], indx <> sentance.Length - 1 with
-        | a, false -> a::newlist
-        | a, true ->
-            match a with
-            | "," -> failwith "still need to find a way to check if i've already used a word"
-                (*match sentance.[indx-1], sentance.[indx + 1], foundWords.  with
-                | ".", ".", _ -> outputList sentance newlist (indx + 1)
-                | ".", ",", _ -> outputList sentance newlist (indx + 1)
-                | ",", ".", _ -> outputList sentance newlist (indx + 1)
-                | ",", ",", _ -> outputList sentance newlist (indx + 1)
-                | x, y, true ->
-                    outputList sentance ()*)
-                    
+let commaSprinkler (input : string) =
+    let len = String.length input // get length of word
+// Split up sentence into a list w/ space as delimeter
+    let rec split (sentence : string) (word: string) (newList : string list) idx =
+        match idx < (len) with 
+        | false -> newList
+        | true ->
+            match sentence.[idx] with
+            | ' ' -> split sentence ("") (word::newList) (idx + 1) // Ignore w/space & concat word to list
+            | '.' -> split sentence (".") (word::newList) (idx + 1) // Ignore w/space & concat word to list
+            | ',' -> split sentence (",") (word::newList) (idx + 1)
+            | c -> split sentence (word + string c) newList (idx + 1) // Build word from sentece
+    // return sentence as list
+    let wordsList = List.rev (split input "" [] 0)
+    printf "Sentence as list is %A\n" wordsList
+    // Build list of all words precced or succeeded by ','
+    let rec builder (sentence: string list) (searchWords: Word list) prevWord idx =
+        match sentence with
+        | [] -> searchWords
+        | currWord::tail -> 
+            match currWord, prevWord with
+            | ",", prev -> builder (tail) ({position=Behind; word=prev}::searchWords) currWord (idx+1)
+            | curr, "," -> builder (tail) ({position=Infront; word=curr}::searchWords) curr (idx+1)
+            | a, _ -> builder (tail) searchWords a (idx+1) 
+    let searchWords = builder (wordsList) [] ("") 0
+
+    //finally place commas in appropriate positions.
+    let rec addComma (sentence: string list) (searchWords: Word list) (prevWord: string) acc =
+        match sentence with
+        | [] -> Some acc
+        | currWord::tail ->
+            let word = searchWords |> List.filter (function x -> x.word = prevWord)
+            match word with 
+            | [] -> addComma (tail) (searchWords) (currWord) (acc + " " + currWord)
+            | data -> 
+                match data with
+                | h1::t1 ->
+                    match h1.position with
+                    | Infront -> 
+                        match currWord with
+                        | ","|"." -> addComma tail (searchWords) currWord (currWord+acc)
+                        | a -> addComma tail searchWords currWord (acc + ", " + a)
+                    | Behind ->
+                        match currWord with
+                        | ","| "." -> addComma tail searchWords currWord acc
+                        | a -> addComma tail searchWords currWord (","+a+acc)
+            
+    // printf "Search words are %A\n" searchWords
     failwith "Not implemented"
 
 let rivers input =

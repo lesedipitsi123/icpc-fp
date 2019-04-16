@@ -1,0 +1,18 @@
+(* Algorithm for comma sprinkler:
+    e.g. "please sit spot. sit spot, sit. spot here now here."
+
+*)
+
+type Position =
+| Before
+| After
+
+let commaSprinkler input =
+    let len = String.length input
+// Decompose string into a list with ' '/',' as delimeters
+    let rec split word idx newList =
+        match (len > 0, idx < len, word.[i], newList) with 
+        | true, true, ' ', list -> split (word) (idx++) 
+        | true, true, ',', list -> 
+        | true, true, c, list -> split (word + c) (idx++) []
+        | false, _, _, _, _ -> None
