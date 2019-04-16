@@ -38,7 +38,7 @@ let commaSprinkler (input : string) =
     let searchWords = builder (wordsList) [] ("") 0
 
     //finally place commas in appropriate positions.
-    let rec addComma (sentence: string list) (searchWords: Word list) (prevWord: string) acc =
+    (*let rec addComma (sentence: string list) (searchWords: Word list) (prevWord: string) acc =
         match sentence with
         | [] -> Some acc
         | currWord::tail ->
@@ -56,11 +56,52 @@ let commaSprinkler (input : string) =
                     | Behind ->
                         match currWord with
                         | ","| "." -> addComma tail searchWords currWord acc
-                        | a -> addComma tail searchWords currWord (","+a+acc)
-            
-    // printf "Search words are %A\n" searchWords
-    failwith "Not implemented"
+                        | a -> addComma tail searchWords currWord (","+a+acc)*)
 
+    let sprinkler (sentanceList:string list) (word:Word) =
+        match word.position with
+        | Behind -> 
+            let rec apply (sentanceList:string list) (newlist:string list) indx =
+                match indx, sentanceList.[indx], indx <> sentanceList.Length - 1, sentanceList.[indx] = word.word with
+                | _, a, false, _ -> a::newlist
+                | 0, a, true, _ -> apply sentanceList (a::newlist) (indx + 1)
+                | _, a, true, false -> apply sentanceList (a::newlist) (indx + 1)
+                | _, a, true, true ->
+                    match sentanceList.[indx - 1] with
+                    | "." -> apply sentanceList (a::newlist) (indx + 1)
+                    | "," -> apply sentanceList (a::newlist) (indx + 1)
+                    | _ -> apply sentanceList (a::","::newlist) (indx + 1)
+            List.rev (apply (sentanceList) ([]) (0))
+        | Infront -> 
+            let rec apply (sentanceList:string list) (newlist:string list) indx =
+                match indx, sentanceList.[indx], indx <> sentanceList.Length - 1, sentanceList.[indx] = word.word with
+                | _, a, false, _ -> a::newlist
+                | 0, a, true, _ -> apply sentanceList (a::newlist) (indx + 1)
+                | _, a, true, false -> apply sentanceList (a::newlist) (indx + 1)
+                | _, a, true, true ->
+                    match sentanceList.[indx + 1] with
+                    | "." -> apply sentanceList (a::newlist) (indx + 1)
+                    | "," -> apply sentanceList (a::newlist) (indx + 1)
+                    | _ -> apply sentanceList (","::a::newlist) (indx + 1)
+            List.rev (apply (sentanceList) ([]) (0))
+           
+    let output = 
+        let workingWords = builder (wordsList) [] ("") 0
+        let rec apply (wordlist: string list) (workingWords: Word List) (completedWords: Word List) =
+            match workingWords with
+            | [] -> wordlist
+            | a::b -> 
+                match (List.exists (fun x -> x=a) completedWords), (sprinkler (wordlist) a) with
+                | false, x -> apply x (List.distinct (List.append workingWords (a::completedWords))) (a::completedWords)
+                | true, _ -> apply wordlist b completedWords
+        
+        apply wordsList workingWords
+    
+    printf "Output is %A\n" (output)
+
+    output
+    // printf "Search words are %A\n" searchWords
+    
 let rivers input =
     failwith "Not implemented"
 
