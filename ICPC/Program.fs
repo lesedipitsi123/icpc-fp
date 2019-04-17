@@ -118,8 +118,131 @@ let commaSprinkler (input : string) =
     Some (outputFormat (output wordsList))
     // printf "Search words are %A\n" searchWords
 
-let rivers input = failwith ""
+let rivers (input:string) = 
+    // takes in the input and returns a string list of the words and space characters e.g ["Like"; " "; "this"]
+    let inputList (input:string) =
+        let rec apply (input:string) (newlist:string list) word =
+            match input.[0],input.Length > 1 with
+            | _, false -> word::newlist
+            | ' ', true -> apply input.[1..] (" "::word::newlist) ""
+            | a, true -> apply input.[1..] (newlist) (word + string a)
+        List.rev (apply (input) ([]) (""))
+
+    //takes in a list of strings and a line width and returns a list with the index of each space character
+    //eg. [5, 8, 13, -1, 4] where -1 represents the start of a new line
+    let spaceIndxList (input:string list) (lineWidth:int) =
+        let rec apply (newlist:int list) (indx:int) (spaceindx:int) (length:int) =
+            match indx < input.Length with
+            | false -> newlist
+            | true -> 
+                match length + input.[indx].Length <= lineWidth with
+                | false ->
+                    match input.[indx] with
+                    | " " -> apply (-1::newlist) (indx + 1) 0 0
+                    | x -> apply (-1::newlist) (indx + 1) (x.Length) (x.Length)
+                | true ->
+                    match input.[indx] with
+                    | " " -> apply (spaceindx::newlist) (indx + 1) (spaceindx + 1) (length + 1)
+                    | x -> apply newlist (indx + 1) (spaceindx + x.Length) (length + x.Length)
+        List.rev (apply [] 0 0 0)
+    
+
+    //returns the longest river found
+    let findRivers (spaceIndxList:int list) = 
+        (*
+            list.split
+            1.foreach x in *initList*
+                a.foreach y in *nextList*
+                    if y = x +/- 1
+                        length++
+                    else
+                        add length to riverLeangths
+
+            //finding the next line
+            find next -1 and add 1
+                        
+        *)
+
+        // this splits the space index list into multiple lists per line
+        // e.g [[]; [4; 8]; [2; 7]; [6]; [4; 7; 9]; []; [5]; [3; 7]; [3]; [9]; [6]; [5]; [5; 9]; [4; 7]; [3; 6]; [5]; []]
+        // this works when only when the oldlist ends with -1
+        let rec listSpliter (oldlist:int list) (newlist:int list) (outputlist:(int list) list) =
+            match List.exists (fun x -> x = -1) oldlist with
+            | false -> (List.rev newlist)::outputlist
+            | true -> 
+                match oldlist with
+                | [] -> (List.rev newlist)::outputlist
+                | a::b ->
+                    match a with
+                    | -1 -> listSpliter b [] ((List.rev newlist)::outputlist)
+                    | _ -> listSpliter b (a::newlist) outputlist
+        let splitlist = listSpliter (spaceIndxList) [] [[]]
+        (*List.rev (listSpliter [4; 8; -1; 2; 7; -1; 6; -1; 4; 7; 9; -1; -1; 5; -1; 3; 7; -1; 3; -1; 9; -1;
+   6; -1; 5; -1; 5; 9; -1; 4; 7; -1; 3; 6; -1; 5; -1] [] [[]]);;*)
         
+        let splitlist = [[]; [4; 8]; [2; 7]; [6]; [4; 7; 9]; [5]; [3; 7]; [3]; [9]; [6]; [5]; [5; 9]; [4; 7]; [3; 6]; [5]; []]
+        let findNextLine indx =
+            match indx < splitlist.Length - 2 with
+            | false -> -1
+            | true -> indx + 1
+        
+        let findNextSpaceIndx xline indx = 
+          match indx < splitlist.[xline].Length - 2 with
+          | false -> -1
+          | true -> indx + 1
+        
+        let rec outerloop (xline:int) (xelement:int) (riverlengths:int list) =
+            //managing stop conditions
+            match xline, xelement with
+            | -1, _ -> riverlengths
+            | _, -1 -> 
+                match findNextLine xline with
+                | -1 -> riverlengths
+                | a -> 
+                    match splitlist.[a] with
+                    | [] -> riverlengths
+                    | _ -> 
+                        let rec innerloop (yline:int) (yelement:int) (length:int) =
+                            match yline, yelement with
+                            | -1, _ -> outerloop -1 0 (length::riverlengths)
+                            | _, -1 -> outerloop -1 0 (length::riverlengths)
+                            | _ -> 
+                                //if y = x +/- 1
+                                match splitlist.[yline].[yelement] = splitlist.[xline].[xelement] - 1 || splitlist.[yline].[yelement] = splitlist.[xline].[xelement] + 1 with
+                                | false -> 
+                                    match findNextSpaceIndx yline yelement with 
+                                    | -1 -> outerloop (findNextLine xline) 0 (length::riverlengths)
+                                    | a -> innerloop yline a length
+                                | true -> innerloop (findNextLine yline) (findNextSpaceIndx yline yelement) (length + 1)
+                        innerloop (findNextLine xline) 0 0
+            | a, _ -> 
+                match splitlist.[a] with
+                | [] -> riverlengths
+                | _ ->
+                    let rec innerloop (yline:int) (yelement:int) (length:int) =
+                        match yline, yelement with
+                        | -1, _ -> outerloop -1 0 (length::riverlengths)
+                        | _, -1 -> outerloop -1 0 (length::riverlengths)
+                        | _ -> 
+                            //if y = x +/- 1
+                            match splitlist.[yline].[yelement] = splitlist.[xline].[xelement] - 1 || splitlist.[yline].[yelement] = splitlist.[xline].[xelement] + 1 with
+                            | false -> 
+                                match findNextSpaceIndx yline yelement with 
+                                | -1 -> outerloop (findNextLine xline) 0 (length::riverlengths)
+                                | a -> innerloop yline a length
+                            | true -> innerloop (findNextLine yline) (findNextSpaceIndx yline yelement) (length + 1)
+                    innerloop (findNextLine xline) 0 0
+        outerloop 1 0 []
+        let output = outerloop 1 0 []
+        printf "findrivers returns %A\n" (output)
+    //printf "findrivers returns %A\n" (findRivers (spaceIndxList (inputList "The Yangtze is the third longest river in Asia and the longest in the world to flow entirely in one country") 10))
+        
+    // takes in a space index list and a line width and returns the longest river
+    let riverFinder spaceIndxList lineWidth =
+        failwith "Not implemented"    
+
+    failwith "Not implemented"
+rivers "The Yangtze is the third longest river in Asia and the longest in the world to flow entirely in one country"
 
 [<EntryPoint>]
 let main argv =
