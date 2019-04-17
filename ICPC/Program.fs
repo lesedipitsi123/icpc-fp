@@ -117,10 +117,9 @@ let commaSprinkler (input : string) =
     printf "Output is %A\n" (Some (outputFormat (output wordsList)))
     Some (outputFormat (output wordsList))
     // printf "Search words are %A\n" searchWords
-commaSprinkler "please, sit spot. sit spot, sit. spot, here now here";;
 
-let rivers input =
-    failwith "Not implemented"
+let rivers input = failwith ""
+        
 
 [<EntryPoint>]
 let main argv =
